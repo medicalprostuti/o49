@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>কেমিস্ট্রি ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "কোনটিতে যোজনী ও জারণ মান উভয়ই শূন্য?",
+          options: {
+            a: "CH₂Cl",
+            b: "MgO",
+            c: "Ne",
+            d: "FeO",
+          },
+          correct: "c",
+          explanation:
+            "<p>নিয়ন (Ne) একটি নিষ্ক্রিয় গ্যাস। নিষ্ক্রিয় গ্যাসসমূহ সাধারণত রাসায়নিক বিক্রিয়ায় অংশগ্রহণ করে না কারণ তাদের সর্ববহিঃস্থ শক্তিস্তরে ইলেকট্রন দ্বারা পূর্ণ থাকে। এ কারণে, নিয়নের যোজনী এবং জারণ মান উভয়ই শূন্য হয়। অন্যান্য অপশনে থাকা যৌগগুলোতে মৌলসমূহের নির্দিষ্ট যোজনী ও জারণ মান বিদ্যমান থাকে।</p>",
+        },
+        {
+          id: 2,
+          question:
+            "নিচের বিক্রিয়াটিতে বিজারক কোনটি? (CuSO₄ + KI → Cu₂I₂ + I₂ + K₂SO₄)",
+          options: {
+            a: "Cu²⁺",
+            b: "I₂",
+            c: "I⁻",
+            d: "K⁺",
+          },
+          correct: "c",
+          explanation:
+            "<p>প্রদত্ত বিক্রিয়ায়, কপার সালফেট (CuSO₄) এবং পটাশিয়াম আয়োডাইড (KI) এর মধ্যে রেডক্স বিক্রিয়া ঘটে। এখানে কপার (Cu) এর জারণ সংখ্যা +2 থেকে +1 এ হ্রাস পায়, অর্থাৎ কপার বিজারিত হয়। অন্যদিকে, আয়োডাইড আয়ন (I⁻) এর জারণ সংখ্যা -1 থেকে 0 (I₂) তে বৃদ্ধি পায়, অর্থাৎ এটি জারিত হয়। যে পদার্থ নিজে জারিত হয়ে অন্যকে বিজারিত করে, তাকে বিজারক বলে। সুতরাং, I⁻ এখানে বিজারক।</p>",
+        },
+        {
+          id: 3,
+          question: "Ca(OCl)Cl যৌগে Cl এর oxidation number কত?",
+          options: {
+            a: "-1, -1",
+            b: "+1, -2",
+            c: "+1, -1",
+            d: "-1, +2",
+          },
+          correct: "c",
+          explanation:
+            "<p>ক্যালসিয়াম অক্সিক্লোরাইড [Ca(OCl)Cl] একটি মিশ্র লবণ। এই যৌগে ক্যালসিয়ামের জারণ সংখ্যা +2 এবং অক্সিজেনের জারণ সংখ্যা -2। যৌগের মোট জারণ সংখ্যা শূন্য হতে হবে।<br>ধরি, একটি Cl এর জারণ সংখ্যা x এবং অন্য Cl এর জারণ সংখ্যা y।<br>+2 + (-2) + x + y = 0<br>x + y = 0<br>এখানে একটি ক্লোরিন পরমাণু অক্সিজেন পরমাণুর সাথে যুক্ত এবং অন্যটি সরাসরি ক্যালসিয়ামের সাথে যুক্ত। ClO⁻ আয়নে Cl এর জারণ সংখ্যা +1 এবং Cl⁻ আয়নে Cl এর জারণ সংখ্যা -1। তাই, এখানে Cl এর জারণ সংখ্যা +1 এবং -1।</p>",
+        },
+        {
+          id: 4,
+          question: "নিচের কোনটি গ্যাসীয় বিজারক পদার্থ?",
+          options: {
+            a: "SO₂",
+            b: "oxalic acid",
+            c: "Ferrous salt (FeSO₄)",
+            d: "Hydrobromic acid (HBr)",
+          },
+          correct: "a",
+          explanation:
+            "<p>সালফার ডাই অক্সাইড (SO₂) একটি গ্যাসীয় পদার্থ যা জারক ও বিজারক উভয় রূপেই কাজ করতে পারে। তবে এটি প্রায়শই বিজারক হিসেবে কাজ করে, বিশেষত যখন এটি উচ্চ জারণ অবস্থার জারক পদার্থ যেমন KMnO₄ বা K₂Cr₂O₇ এর সাথে বিক্রিয়া করে। অক্সালিক অ্যাসিড, ফেরাস লবণ এবং হাইড্রোক্লোরিক অ্যাসিড কঠিন বা তরল বিজারক।</p>",
+        },
+        {
+          id: 5,
+          question: "নিচের কোনটি 'Oxidation-reduction reaction'?",
+          options: {
+            a: "NaCl + AgNO₃ → NaNO₃ + AgCl",
+            b: "2H₂S + SO₂ → 2H₂O + 3S",
+            c: "CaCO₃ → CaO + CO₂",
+            d: "HF + KOH → KF + H₂O",
+          },
+          correct: "b",
+          explanation:
+            "<p>জারণ-বিজারণ বিক্রিয়া হলো এমন এক ধরনের রাসায়নিক বিক্রিয়া যেখানে বিক্রিয়কগুলির জারণ সংখ্যা পরিবর্তিত হয়।<br>অপশন (B) 2H₂S + SO₂ → 2H₂O + 3S বিক্রিয়াটিতে হাইড্রোজেন সালফাইড (H₂S) এর সালফারের জারণ সংখ্যা -2 থেকে 0 তে বৃদ্ধি পায় (জারিত হয়) এবং সালফার ডাই অক্সাইড (SO₂) এর সালফারের জারণ সংখ্যা +4 থেকে 0 তে হ্রাস পায় (বিজারিত হয়)। এটি একটি রেডক্স বিক্রিয়া।<br>অন্যান্য অপশনগুলো (A) বিনিময়, (C) বিয়োজন এবং (D) প্রশমন বিক্রিয়া, যেখানে জারণ সংখ্যার কোনো পরিবর্তন হয় না।</p>",
+        },
+        {
+          id: 6,
+          question: "নিচের কোনটি 'Gaseous oxidizing agent'?",
+          options: {
+            a: "H₂O₂",
+            b: "KMnO₄",
+            c: "H₂SO₄",
+            d: "O₃",
+          },
+          correct: "d",
+          explanation:
+            "<p>ওজোন (O₃) একটি শক্তিশালী গ্যাসীয় জারক পদার্থ। এটি বিভিন্ন রাসায়নিক বিক্রিয়ায় ইলেকট্রন গ্রহণ করে এবং অন্য পদার্থকে জারিত করে। হাইড্রোজেন পারক্সাইড (H₂O₂), পটাশিয়াম পারম্যাঙ্গানেট (KMnO₄) এবং সালফিউরিক অ্যাসিড (H₂SO₄) ও জারক পদার্থ, কিন্তু ওজোন একমাত্র গ্যাসীয় জারক।</p>",
+        },
+        {
+          id: 7,
+          question: "নিচের কোনটি জারক ও বিজারক উভয় হিসাবেই কাজ করে?",
+          options: {
+            a: "Ammonia",
+            b: "Nitrogen peroxide",
+            c: "Nitric acid",
+            d: "Nitrous acid",
+          },
+          correct: "d",
+          explanation:
+            "<p>নাইট্রাস অ্যাসিড (HNO₂) এর নাইট্রোজেনের জারণ সংখ্যা +3, যা তার সর্বনিম্ন জারণ সংখ্যা (-3) এবং সর্বোচ্চ জারণ সংখ্যা (+5) এর মাঝামাঝি। এ কারণে, নাইট্রাস অ্যাসিড ইলেকট্রন গ্রহণ করে জারক হিসেবে এবং ইলেকট্রন ত্যাগ করে বিজারক হিসেবে উভয় রূপে কাজ করতে পারে। যেমন: এটি KMnO₄ এর সাথে বিজারক হিসেবে এবং H₂S এর সাথে জারক হিসেবে কাজ করে।</p>",
+        },
+        {
+          id: 8,
+          question: "নিচের কোনটি জারক ও বিজারক উভয় রূপে কাজ করে?",
+          options: {
+            a: "KI",
+            b: "H₂C₂O₄",
+            c: "Na₂S₂O₃",
+            d: "H₂O₂",
+          },
+          correct: "d",
+          explanation:
+            "<p>হাইড্রোজেন পারক্সাইড (H₂O₂) একটি যৌগ যেখানে অক্সিজেন পরমাণুর জারণ সংখ্যা -1। অক্সিজেন সাধারণত -2 জারণ সংখ্যায় থাকে, আবার মৌলিক অবস্থায় এর জারণ সংখ্যা 0। তাই, H₂O₂ ইলেকট্রন গ্রহণ করে -2 জারণ সংখ্যায় (H₂O) বিজারিত হতে পারে, এবং ইলেকট্রন ত্যাগ করে 0 জারণ সংখ্যায় (O₂) জারিত হতে পারে। এই কারণে এটি জারক ও বিজারক উভয় রূপে কাজ করে।</p>",
+        },
+        {
+          id: 9,
+          question: "নিচের কোনটি সবচেয়ে শক্তিশালী বিজারক?",
+          options: {
+            a: "Al",
+            b: "Zn",
+            c: "Fe",
+            d: "Li",
+          },
+          correct: "d",
+          explanation:
+            "<p>ইলেকট্রন ত্যাগের প্রবণতার উপর ভিত্তি করে বিজারকের শক্তি নির্ধারিত হয়। লিথিয়াম (Li) ক্ষার ধাতুসমূহের মধ্যে সবচেয়ে বেশি ইলেকট্রন ত্যাগের প্রবণতা দেখায়, কারণ এর পারমাণবিক আকার ছোট এবং আয়নাইজেশন শক্তি কম। এটি খুব সহজেই একটি ইলেকট্রন ত্যাগ করে Li⁺ আয়নে পরিণত হতে পারে। তাই, লিথিয়াম সবচেয়ে শক্তিশালী বিজারক।</p>",
+        },
+        {
+          id: 10,
+          question: "নিচের কোনটির জারণ ক্ষমতা সবচেয়ে বেশি?",
+          options: {
+            a: "F₂",
+            b: "Cl₂",
+            c: "I₂",
+            d: "Br₂",
+          },
+          correct: "a",
+          explanation:
+            "<p>হ্যালোজেন মৌলগুলোর ক্ষেত্রে, ফ্লোরিন (F₂) পর্যায় সারণীর সবচেয়ে তড়িৎ ঋণাত্মক মৌল। এর ইলেকট্রন গ্রহণের প্রবণতা সবচেয়ে বেশি, যার ফলে এটি অত্যন্ত শক্তিশালী জারক হিসেবে কাজ করে। হ্যালোজেন গ্রুপের উপর থেকে নিচের দিকে জারণ ক্ষমতা হ্রাস পায়। তাই, F₂ এর জারণ ক্ষমতা Cl₂, Br₂ এবং I₂ এর চেয়ে বেশি।</p>",
+        },
+        {
+          id: 11,
+          question: "নিম্নের কোনটি জারক নয়?",
+          options: {
+            a: "MnO₂",
+            b: "CO",
+            c: "K₂Cr₂O₇",
+            d: "I₂",
+          },
+          correct: "b",
+          explanation:
+            "<p>জারক পদার্থ ইলেকট্রন গ্রহণ করে নিজে বিজারিত হয় এবং অন্যকে জারিত করে। কার্বন মনোক্সাইড (CO) একটি বিজারক পদার্থ। এটি প্রায়শই ধাতব অক্সাইড থেকে ধাতু নিষ্কাশনে ব্যবহৃত হয়, যেখানে এটি ধাতব অক্সাইডকে বিজারিত করে নিজে জারিত হয়। ম্যাঙ্গানিজ ডাই অক্সাইড (MnO₂), পটাশিয়াম ডাইক্রোমেট (K₂Cr₂O₇) এবং আয়োডিন (I₂) জারক পদার্থ।</p>",
+        },
+        {
+          id: 12,
+          question:
+            "নিম্নের কোন বিক্রিয়ায় তড়িৎ ঋণাত্মক মূলক অপসারিত হয়েছে?",
+          options: {
+            a: "CuO(s) + C(s) → Cu(s) + CO(g)",
+            b: "Cl₂(g) + 2Na(s) → 2NaCl(g)",
+            c: "CuSO₄(aq) + Zn(s) → Cu(s) + ZnSO₄(aq)",
+            d: "2FeCl₃(aq) + SnCl₂(aq) → 2FeCl₂(aq) + SnCl₄",
+          },
+          correct: "c",
+          explanation:
+            "<p>তড়িৎ ঋণাত্মক মূলক অপসারিত হওয়া বলতে সাধারণত একটি যৌগের সাথে যুক্ত অধিক তড়িৎ ঋণাত্মক পরমাণু বা আয়নের প্রতিস্থাপন বোঝায়। অপশন (C) CuSO₄(aq) + Zn(s) → Cu(s) + ZnSO₄(aq) বিক্রিয়াটিতে, কপার সালফেট থেকে সালফেট (SO₄²⁻) আয়ন অপসারিত হয়নি, বরং কপার (Cu²⁺) আয়ন জিংক (Zn) দ্বারা প্রতিস্থাপিত হয়েছে। এখানে কপার (Cu) এর জারণ সংখ্যা +2 থেকে 0 তে হ্রাস পায় এবং জিংক (Zn) এর জারণ সংখ্যা 0 থেকে +2 তে বৃদ্ধি পায়। এটি একটি প্রতিস্থাপন বিক্রিয়া, যেখানে একটি ধাতু অন্য ধাতুর লবণ থেকে তার আয়নকে প্রতিস্থাপন করে।</p>",
+        },
+        {
+          id: 13,
+          question: "নিচের কোন যৌগে কেন্দ্রীয় পরমাণুর O.N. শূন্য হয়েছে?",
+          options: {
+            a: "Fe₃O₄",
+            b: "CHCl₃",
+            c: "CH₂Cl₂",
+            d: "CH₂O₂",
+          },
+          correct: "c",
+          explanation:
+            "<p>যৌগে কেন্দ্রীয় পরমাণুর জারণ সংখ্যা শূন্য হতে পারে যদি এটি বিভিন্ন মৌলের সাথে এমনভাবে যুক্ত থাকে যেখানে ধনাত্মক ও ঋণাত্মক চার্জ একে অপরকে প্রশমিত করে।<br>CH₂Cl₂ (ডাইক্লোরোমিথেন) এ, হাইড্রোজেনের জারণ সংখ্যা +1 এবং ক্লোরিনের জারণ সংখ্যা -1।<br>ধরি, কার্বনের জারণ সংখ্যা x।<br>x + 2(+1) + 2(-1) = 0<br>x + 2 - 2 = 0<br>x = 0<br>সুতরাং, CH₂Cl₂ যৌগে কার্বনের জারণ সংখ্যা শূন্য।</p>",
+        },
+        {
+          id: 14,
+          question:
+            "নিচের কোন যৌগে কেন্দ্রীয় পরমাণুর যোজনী ও O.N. এর সংখ্যা সমান হয়েছে?",
+          options: {
+            a: "CH₂Cl₂",
+            b: "CCl₄",
+            c: "C₂H₆",
+            d: "CH₂O₂",
+          },
+          correct: "b",
+          explanation:
+            "<p>কার্বন টেট্রাক্লোরাইড (CCl₄) যৌগে কার্বনের যোজনী 4।<br>এখন কার্বনের জারণ সংখ্যা নির্ণয় করি:<br>ধরি, কার্বনের জারণ সংখ্যা x। ক্লোরিনের জারণ সংখ্যা -1।<br>x + 4(-1) = 0<br>x - 4 = 0<br>x = +4<br>সুতরাং, CCl₄ যৌগে কার্বনের যোজনী 4 এবং জারণ সংখ্যা +4, যা সমান।</p>",
+        },
+        {
+          id: 15,
+          question:
+            "ক্ষারীয় MnO₄⁻ আয়ন ও C₂O₄²⁻ আয়নের রিডক্স বিক্রিয়ায় উভয়ের মোলার অনুপাত কত?",
+          options: {
+            a: "2:3",
+            b: "3:2",
+            c: "1:3",
+            d: "2:1",
+          },
+          correct: "a",
+          explanation:
+            "<p>ক্ষারীয় মাধ্যমে MnO₄⁻ আয়ন MnO₂ তে রূপান্তরিত হয়, যেখানে Mn এর জারণ সংখ্যা +7 থেকে +4 এ হ্রাস পায় (3টি ইলেকট্রন গ্রহণ)।<br>MnO₄⁻ + 3e⁻ → MnO₂<br>অন্যদিকে, C₂O₄²⁻ আয়ন CO₂ তে জারিত হয়, যেখানে প্রতিটি কার্বনের জারণ সংখ্যা +3 থেকে +4 এ বৃদ্ধি পায় (মোট 2টি ইলেকট্রন ত্যাগ)।<br>C₂O₄²⁻ → 2CO₂ + 2e⁻<br>ইলেকট্রন আদান-প্রদান সমান করার জন্য, MnO₄⁻ এর বিক্রিয়াকে 2 দ্বারা এবং C₂O₄²⁻ এর বিক্রিয়াকে 3 দ্বারা গুণ করতে হবে।<br>2MnO₄⁻ + 6e⁻ → 2MnO₂<br>3C₂O₄²⁻ → 6CO₂ + 6e⁻<br>সুতরাং, MnO₄⁻ ও C₂O₄²⁻ এর মোলার অনুপাত 2:3।</p>",
+        },
+        {
+          id: 16,
+          question:
+            "K₂Cr₂O₇ ও FeSO₄ এর রিডক্স বিক্রিয়ার জারক ও বিজারকের মোল অনুপাত কোনটি?",
+          options: {
+            a: "1:6",
+            b: "6:1",
+            c: "7:1",
+            d: "7:6",
+          },
+          correct: "a",
+          explanation:
+            "<p>K₂Cr₂O₇ একটি শক্তিশালী জারক। এটি অম্লীয় মাধ্যমে Cr³⁺ আয়নে বিজারিত হয়। এখানে প্রতিটি Cr এর জারণ সংখ্যা +6 থেকে +3 তে হ্রাস পায়, অর্থাৎ প্রতিটি Cr পরমাণু 3টি ইলেকট্রন গ্রহণ করে। যেহেতু K₂Cr₂O₇ এ দুটি Cr পরমাণু আছে, তাই এটি মোট 6টি ইলেকট্রন গ্রহণ করে (2 × 3 = 6)।<br>FeSO₄ এ Fe²⁺ আয়ন Fe³⁺ আয়নে জারিত হয়, অর্থাৎ প্রতিটি Fe²⁺ আয়ন 1টি ইলেকট্রন ত্যাগ করে।<br>ইলেকট্রন আদান-প্রদান সমান করতে, 1 মোল K₂Cr₂O₇ এর জন্য 6 মোল FeSO₄ প্রয়োজন।<br>সুতরাং, জারক (K₂Cr₂O₇) ও বিজারক (FeSO₄) এর মোল অনুপাত 1:6।</p>",
+        },
+        {
+          id: 17,
+          question:
+            "অম্লীয় Cr₂O₇²⁻ আয়ন ও C₂O₄²⁻ আয়নের রিডক্স বিক্রিয়ায় Cr₂O₇²⁻ ও C₂O₄²⁻ এর মোল অনুপাত কোনটি?",
+          options: {
+            a: "1:2",
+            b: "2:3",
+            c: "1:3",
+            d: "3:2",
+          },
+          correct: "c",
+          explanation:
+            "<p>অম্লীয় মাধ্যমে Cr₂O₇²⁻ আয়ন Cr³⁺ এ বিজারিত হয়। এখানে Cr এর জারণ সংখ্যা +6 থেকে +3 তে হ্রাস পায়, অর্থাৎ প্রতি Cr পরমাণু 3টি ইলেকট্রন গ্রহণ করে। যেহেতু Cr₂O₇²⁻ এ দুটি Cr পরমাণু আছে, তাই এটি মোট 6টি ইলেকট্রন গ্রহণ করে (2 × 3 = 6)।<br>অন্যদিকে, C₂O₄²⁻ আয়ন CO₂ তে জারিত হয়। এখানে প্রতিটি কার্বনের জারণ সংখ্যা +3 থেকে +4 এ বৃদ্ধি পায়, অর্থাৎ প্রতিটি কার্বন পরমাণু 1টি ইলেকট্রন ত্যাগ করে। যেহেতু C₂O₄²⁻ এ দুটি কার্বন পরমাণু আছে, তাই এটি মোট 2টি ইলেকট্রন ত্যাগ করে।<br>ইলেকট্রন আদান-প্রদান সমান করতে, Cr₂O₇²⁻ এর বিক্রিয়াকে 1 দ্বারা এবং C₂O₄²⁻ এর বিক্রিয়াকে 3 দ্বারা গুণ করতে হবে (6টি ইলেকট্রন)।<br>সুতরাং, Cr₂O₇²⁻ ও C₂O₄²⁻ এর মোল অনুপাত 1:3।</p>",
+        },
+        {
+          id: 18,
+          question: "নিচের কোনটি জারক ও বিজারক উভয় রূপে কাজ করে?",
+          options: {
+            a: "Fe³⁺",
+            b: "Fe²⁺",
+            c: "Sn⁴⁺",
+            d: "Hg₂²⁺",
+          },
+          correct: "b",
+          explanation:
+            "<p>জারক ও বিজারক উভয় রূপে কাজ করতে হলে একটি মৌলের মধ্যবর্তী জারণ অবস্থা থাকতে হবে। Fe²⁺ আয়ন আয়রনের একটি মধ্যবর্তী জারণ অবস্থা।<br>Fe²⁺ ইলেকট্রন গ্রহণ করে Fe (ধাতু) অথবা Fe³⁺ ইলেকট্রন দান করে Fe³⁺ এ রূপান্তরিত হতে পারে। তাই Fe²⁺ জারক (ইলেকট্রন গ্রহণ করে) এবং বিজারক (ইলেকট্রন দান করে) উভয় রূপে কাজ করতে পারে।<br>Fe³⁺ শুধুমাত্র জারক হিসেবে কাজ করে (ইলেকট্রন গ্রহণ করে Fe²⁺ এ পরিণত হয়)। Sn⁴⁺ এবং Hg₂²⁺ সাধারণত জারক হিসেবে কাজ করে।</p>",
+        },
+        {
+          id: 19,
+          question:
+            "অম্লীয় KMnO₄ দ্বারা রিডক্স বিক্রিয়ায় Fe²⁺ আয়ন কী হিসাবে কাজ করে?",
+          options: {
+            a: "নির্দেশক",
+            b: "দর্শক আয়ন",
+            c: "জারক",
+            d: "বিজারক",
+          },
+          correct: "d",
+          explanation:
+            "<p>অম্লীয় KMnO₄ একটি শক্তিশালী জারক। এটি বিক্রিয়ায় Fe²⁺ আয়নকে জারিত করে Fe³⁺ আয়নে পরিণত করে। যেহেতু Fe²⁺ আয়ন নিজে জারিত হয় এবং KMnO₄ কে বিজারিত করে, তাই Fe²⁺ আয়ন এখানে বিজারক হিসাবে কাজ করে।</p>",
+        },
+        {
+          id: 20,
+          question: "নিচের কোনটি বিজারক?",
+          options: {
+            a: "Fe₂(SO₄)₃",
+            b: "KMnO₄",
+            c: "KI",
+            d: "K₂Cr₂O₇",
+          },
+          correct: "c",
+          explanation:
+            "<p>বিজারক পদার্থ ইলেকট্রন ত্যাগ করে নিজে জারিত হয় এবং অন্যকে বিজারিত করে। পটাশিয়াম আয়োডাইড (KI) এর আয়োডাইড আয়ন (I⁻) খুব সহজেই ইলেকট্রন ত্যাগ করে I₂ তে জারিত হতে পারে। তাই এটি একটি শক্তিশালী বিজারক।<br>Fe₂(SO₄)₃, KMnO₄ এবং K₂Cr₂O₇ জারক পদার্থ।</p>",
+        },
+        {
+          id: 21,
+          question:
+            "নিচের কোন বিক্রিয়াটিকে জারণ-বিজারণ বিক্রিয়া হিসেবে গণ্য করা যেতে পারে?",
+          options: {
+            a: "Cu²⁺ + 4NH₃ → [Cu(NH₃)₄]²⁺",
+            b: "NH₃ + H⁺ → NH₄⁺",
+            c: "Ca²⁺ + F⁻ → CaF₂",
+            d: "Cl₂ + OH⁻ → Cl⁻ + ClO⁻ + H₂O",
+          },
+          correct: "d",
+          explanation:
+            "<p>জারণ-বিজারণ বিক্রিয়ায় পরমাণুর জারণ সংখ্যার পরিবর্তন ঘটে।<br>অপশন (D) Cl₂ + OH⁻ → Cl⁻ + ClO⁻ + H₂O বিক্রিয়াটিতে ক্লোরিনের (Cl₂) জারণ সংখ্যা 0। বিক্রিয়া শেষে Cl⁻ এ ক্লোরিনের জারণ সংখ্যা -1 (বিজারণ) এবং ClO⁻ এ ক্লোরিনের জারণ সংখ্যা +1 (জারণ)। একই মৌলের জারণ ও বিজারণ ঘটার কারণে এটি একটি অসমঞ্জস জারণ-বিজারণ বিক্রিয়া।<br>অন্যান্য অপশনগুলো (A) জটিল যৌগ গঠন, (B) প্রোটন গ্রহণ এবং (C) অধঃক্ষেপণ বিক্রিয়া, যেখানে জারণ সংখ্যার কোনো পরিবর্তন হয় না।</p>",
+        },
+        {
+          id: 22,
+          question:
+            "বিক্রিয়াকালে অম্লীয় মাধ্যমে K₂Cr₂O₇ কতটি ইলেকট্রন গ্রহণ করে?",
+          options: {
+            a: "4",
+            b: "5",
+            c: "6",
+            d: "7",
+          },
+          correct: "c",
+          explanation:
+            "<p>অম্লীয় মাধ্যমে K₂Cr₂O₇ (ডাইক্রোমেট আয়ন, Cr₂O₇²⁻) বিজারিত হয়ে Cr³⁺ আয়নে পরিণত হয়।<br>Cr₂O₇²⁻ এর প্রতিটি Cr পরমাণুর জারণ সংখ্যা +6। বিজারণের পর Cr³⁺ এর জারণ সংখ্যা +3।<br>প্রতিটি Cr পরমাণুর জারণ সংখ্যা 3 হ্রাস পায় (6 - 3 = 3)।<br>যেহেতু Cr₂O₇²⁻ আয়নে 2টি Cr পরমাণু আছে, তাই মোট ইলেকট্রন গ্রহণ করে 2 × 3 = 6টি ইলেকট্রন।<br>বিক্রিয়াটি হলো: Cr₂O₇²⁻ + 14H⁺ + 6e⁻ → 2Cr³⁺ + 7H₂O</p>",
+        },
+        {
+          id: 23,
+          question: "অম্লীয় মাধ্যমে KMnO₄ কয়টি ইলেকট্রন গ্রহণ করে?",
+          options: {
+            a: "3",
+            b: "4",
+            c: "5",
+            d: "6",
+          },
+          correct: "c",
+          explanation:
+            "<p>অম্লীয় মাধ্যমে KMnO₄ (পারম্যাঙ্গানেট আয়ন, MnO₄⁻) বিজারিত হয়ে Mn²⁺ আয়নে পরিণত হয়।<br>MnO₄⁻ এর Mn পরমাণুর জারণ সংখ্যা +7। বিজারণের পর Mn²⁺ এর জারণ সংখ্যা +2।<br>জারণ সংখ্যার হ্রাস = 7 - 2 = 5।<br>সুতরাং, অম্লীয় মাধ্যমে KMnO₄ 5টি ইলেকট্রন গ্রহণ করে।<br>বিক্রিয়াটি হলো: MnO₄⁻ + 8H⁺ + 5e⁻ → Mn²⁺ + 4H₂O</p>",
+        },
+        {
+          id: 24,
+          question: "ক্ষারীয় মাধ্যমে KMnO₄ কয়টি ইলেকট্রন গ্রহণ করে?",
+          options: {
+            a: "1",
+            b: "3",
+            c: "5",
+            d: "6",
+          },
+          correct: "b",
+          explanation:
+            "<p>ক্ষারীয় মাধ্যমে KMnO₄ (পারম্যাঙ্গানেট আয়ন, MnO₄⁻) বিজারিত হয়ে MnO₂ তে পরিণত হয়।<br>MnO₄⁻ এর Mn পরমাণুর জারণ সংখ্যা +7। বিজারণের পর MnO₂ এর Mn এর জারণ সংখ্যা +4।<br>জারণ সংখ্যার হ্রাস = 7 - 4 = 3।<br>সুতরাং, ক্ষারীয় মাধ্যমে KMnO₄ 3টি ইলেকট্রন গ্রহণ করে।<br>বিক্রিয়াটি হলো: MnO₄⁻ + 2H₂O + 3e⁻ → MnO₂ + 4OH⁻</p>",
+        },
+        {
+          id: 25,
+          question: "KI + X → I₂ এ বিক্রিয়ায় X কোনটি?",
+          options: {
+            a: "জারক",
+            b: "বিজারক",
+            c: "উভয়ই",
+            d: "কোনোটিই নয়",
+          },
+          correct: "a",
+          explanation:
+            "<p>প্রদত্ত বিক্রিয়ায়, KI (পটাশিয়াম আয়োডাইড) থেকে I₂ (আয়োডিন) উৎপন্ন হচ্ছে। এখানে KI এর I⁻ এর জারণ সংখ্যা -1 থেকে I₂ এর 0 তে বৃদ্ধি পাচ্ছে, অর্থাৎ I⁻ জারিত হচ্ছে।<br>যেহেতু I⁻ জারিত হচ্ছে, তার মানে সে বিজারক হিসেবে কাজ করছে। বিজারককে জারিত করার জন্য একটি জারক পদার্থ প্রয়োজন। তাই X অবশ্যই একটি জারক হবে।</p>",
+        },
+        {
+          id: 26,
+          question: "PbO₂ → Pb²⁺ এক্ষেত্রে PbO₂ এর কী পরিবর্তন ঘটে?",
+          options: {
+            a: "জারণ",
+            b: "বিজারণ",
+            c: "জারণ-বিজারণ কোনোটিই নয়",
+            d: "উভয়ই একত্রে ঘটে",
+          },
+          correct: "b",
+          explanation:
+            "<p>PbO₂ (লেড ডাই অক্সাইড) এ লেডের জারণ সংখ্যা +4।<br>Pb²⁺ আয়নে লেডের জারণ সংখ্যা +2।<br>এখানে লেডের জারণ সংখ্যা +4 থেকে +2 তে হ্রাস পেয়েছে। জারণ সংখ্যা হ্রাস পাওয়াকে বিজারণ বলে। সুতরাং, PbO₂ এর বিজারণ ঘটে।</p>",
+        },
+        {
+          id: 27,
+          question:
+            "SnCl₂ + 2HgCl₂ = SnCl₄ + 2HgCl বিক্রিয়ায় কোনটি জারিত হয়েছে?",
+          options: {
+            a: "Sn²⁺",
+            b: "Hg²⁺",
+            c: "Cl⁻",
+            d: "Sn⁴⁺",
+          },
+          correct: "a",
+          explanation:
+            "<p>প্রদত্ত বিক্রিয়ায়, SnCl₂ (স্ট্যানাস ক্লোরাইড) থেকে SnCl₄ (স্ট্যানিক ক্লোরাইড) এ পরিণত হচ্ছে।<br>SnCl₂ এ Sn এর জারণ সংখ্যা +2। SnCl₄ এ Sn এর জারণ সংখ্যা +4।<br>এখানে Sn এর জারণ সংখ্যা +2 থেকে +4 এ বৃদ্ধি পেয়েছে। জারণ সংখ্যা বৃদ্ধি পাওয়াকে জারণ বলে। সুতরাং, Sn²⁺ জারিত হয়েছে।<br>অন্যদিকে, HgCl₂ এ Hg এর জারণ সংখ্যা +2। HgCl এ Hg এর জারণ সংখ্যা +1। এখানে Hg এর জারণ সংখ্যা হ্রাস পেয়েছে, অর্থাৎ Hg বিজারিত হয়েছে।</p>",
+        },
+        {
+          id: 28,
+          question:
+            "MnO₂ + C₂O₄²⁻ + H⁺ → Mn²⁺ + CO₂ + H₂O এ বিক্রিয়াটিতে জারক ও বিজারকের মোল সংখ্যার অনুপাত কত?",
+          options: {
+            a: "1:5",
+            b: "2:5",
+            c: "5:2",
+            d: "1:6",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে MnO₂ জারক এবং C₂O₄²⁻ বিজারক।<br>MnO₂ (Mn এর জারণ সংখ্যা +4) Mn²⁺ এ রূপান্তরিত হয় (জারণ সংখ্যা +2)। ইলেকট্রন গ্রহণ = 4 - 2 = 2টি।<br>C₂O₄²⁻ (প্রতি C এর জারণ সংখ্যা +3) CO₂ তে রূপান্তরিত হয় (প্রতি C এর জারণ সংখ্যা +4)। ইলেকট্রন ত্যাগ = 2 × (4-3) = 2টি।<br>ইলেকট্রন আদান-প্রদান সমান করতে, MnO₂ এর সমীকরণকে 1 দ্বারা এবং C₂O₄²⁻ এর সমীকরণকে 1 দ্বারা গুণ করতে হবে (এখানে MnO₂ এর বিজারণে 2টি ইলেকট্রন ও C₂O₄²⁻ এর জারণে 2টি ইলেকট্রন আদান-প্রদান হয়)।<br>তবে, সম্পূর্ণ সমতাযুক্ত বিক্রিয়ায় দেখা যায়: 2MnO₂ + 5C₂O₄²⁻ + 16H⁺ → 2Mn²⁺ + 10CO₂ + 8H₂O<br>সুতরাং, জারক (MnO₂) ও বিজারক (C₂O₄²⁻) এর মোল সংখ্যার অনুপাত 2:5।</p>",
+        },
+        {
+          id: 29,
+          question: "নিচের কোনটিতে Cl এর জারণ সংখ্যা সর্বাধিক?",
+          options: {
+            a: "HClO",
+            b: "HClO₂",
+            c: "HClO₃",
+            d: "HClO₄",
+          },
+          correct: "d",
+          explanation:
+            "<p>বিভিন্ন অক্সি-অ্যাসিডে ক্লোরিনের জারণ সংখ্যা নির্ণয় করা যাক:<br>HClO (হাইপোক্লোরাস অ্যাসিড): H (+1) + Cl (x) + O (-2) = 0 &rArr; 1 + x - 2 = 0 &rArr; x = +1<br>HClO₂ (ক্লোরাস অ্যাসিড): H (+1) + Cl (x) + 2O (-2) = 0 &rArr; 1 + x - 4 = 0 &rArr; x = +3<br>HClO₃ (ক্লোরিক অ্যাসিড): H (+1) + Cl (x) + 3O (-2) = 0 &rArr; 1 + x - 6 = 0 &rArr; x = +5<br>HClO₄ (পারক্লোরিক অ্যাসিড): H (+1) + Cl (x) + 4O (-2) = 0 &rArr; 1 + x - 8 = 0 &rArr; x = +7<br>সুতরাং, HClO₄ এ Cl এর জারণ সংখ্যা সর্বাধিক (+7)।</p>",
+        },
+        {
+          id: 30,
+          question:
+            "Br₂ + NaOH (conc) → BrO₃⁻ + Na⁺ + H₂O এ বিক্রিয়ায় Br এর জারণ সংখ্যার কী পরিবর্তন হয়?",
+          options: {
+            a: "0 থেকে +5",
+            b: "0 থেকে +3",
+            c: "+1 থেকে +5",
+            d: "–1 থেকে +5",
+          },
+          correct: "a",
+          explanation:
+            "<p>বিক্রিয়ার শুরুতে Br₂ (ব্রোমিন) এর জারণ সংখ্যা 0।<br>বিক্রিয়ার উৎপাদে BrO₃⁻ আয়নে ব্রোমিনের জারণ সংখ্যা নির্ণয় করি:<br>ধরি, Br এর জারণ সংখ্যা x। অক্সিজেনের জারণ সংখ্যা -2।<br>x + 3(-2) = -1<br>x - 6 = -1<br>x = +5<br>সুতরাং, এই বিক্রিয়ায় ব্রোমিনের জারণ সংখ্যার পরিবর্তন 0 থেকে +5। এটি একটি অসমঞ্জস জারণ-বিজারণ বিক্রিয়া, যেখানে Br₂ একই সাথে জারিত (BrO₃⁻) এবং বিজারিত (Br⁻) হয়। তবে প্রশ্নে শুধু BrO₃⁻ এর পরিবর্তন জানতে চাওয়া হয়েছে।</p>",
+        },
+        {
+          id: 31,
+          question: "C₂O₃⁻ → CO₂ এ বিক্রিয়ায় C₂O₃⁻ আয়ন সম্পর্কে কোনটি সঠিক?",
+          options: {
+            a: "বিজারিত হয়",
+            b: "ইলেকট্রন ত্যাগ করে",
+            c: "ইলেকট্রন গ্রহণ করে",
+            d: "অক্সিজেন ত্যাগ করে",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে C₂O₃⁻ (C এর জারণ সংখ্যা নির্ণয় করি: 2x + 3(-2) = -1 &rArr; 2x - 6 = -1 &rArr; 2x = 5 &rArr; x = +2.5) CO₂ (C এর জারণ সংখ্যা +4) তে রূপান্তরিত হচ্ছে।<br>কার্বনের জারণ সংখ্যা +2.5 থেকে +4 এ বৃদ্ধি পেয়েছে। জারণ সংখ্যা বৃদ্ধি পাওয়া মানে ইলেকট্রন ত্যাগ করা। তাই, C₂O₃⁻ আয়ন ইলেকট্রন ত্যাগ করে জারিত হয়।</p>",
+        },
+        {
+          id: 32,
+          question:
+            "IO₃⁻ + 5I⁻ + 6H⁺ → 3I₂ + 3H₂O এখানে IO₃⁻ এবং I₂ এ আয়োডিনের জারণ সংখ্যা যথাক্রমে কত কত?",
+          options: {
+            a: "–1, +1,0",
+            b: "+5,-1 0",
+            c: "+7,-1 0",
+            d: "+3,0, –1",
+          },
+          correct: "b",
+          explanation:
+            "<p>IO₃⁻ আয়নে আয়োডিনের জারণ সংখ্যা নির্ণয় করি:<br>ধরি, I এর জারণ সংখ্যা x। অক্সিজেনের জারণ সংখ্যা -2।<br>x + 3(-2) = -1<br>x - 6 = -1<br>x = +5<br>I⁻ আয়নে আয়োডিনের জারণ সংখ্যা -1।<br>I₂ (মৌলিক আয়োডিন) এ আয়োডিনের জারণ সংখ্যা 0।<br>সুতরাং, IO₃⁻ এবং I₂ এ আয়োডিনের জারণ সংখ্যা যথাক্রমে +5 এবং 0।</p>",
+        },
+        {
+          id: 33,
+          question: "NaOH + Cl₂ → NaCl + NaClO + H₂O, এটি কী ধরনের বিক্রিয়া?",
+          options: {
+            a: "ক্লোরিনেশন",
+            b: "সংযোজন",
+            c: "ডিসপ্রোপোরশন",
+            d: "সংশ্লেষণ",
+          },
+          correct: "c",
+          explanation:
+            "<p>ডিসপ্রোপোরশন বা অসমঞ্জস জারণ-বিজারণ বিক্রিয়া হলো এমন বিক্রিয়া যেখানে একই মৌল একই সময়ে জারিত ও বিজারিত হয়।<br>এই বিক্রিয়ায় Cl₂ এর জারণ সংখ্যা 0। উৎপাদে NaCl এ Cl এর জারণ সংখ্যা -1 (বিজারণ) এবং NaClO এ Cl এর জারণ সংখ্যা +1 (জারণ)। যেহেতু ক্লোরিন একই সাথে জারিত ও বিজারিত হচ্ছে, এটি একটি ডিসপ্রোপোরশন বিক্রিয়া।</p>",
+        },
+        {
+          id: 34,
+          question: "নিচের কোনটি বিজারক?",
+          options: {
+            a: "বেনজোয়িক এসিড",
+            b: "মিথানোয়িক এসিড",
+            c: "ইথানোয়িক এসিড",
+            d: "ক্লোরো ইথানোয়িক এসিড",
+          },
+          correct: "b",
+          explanation:
+            "<p>বিজারক পদার্থ নিজে জারিত হয়ে অন্যকে বিজারিত করে। মিথানোয়িক এসিড (HCOOH) একটি কার্বক্সিলিক অ্যাসিড হলেও এতে অ্যালডিহাইড গ্রুপ (-CHO) এর মতো একটি কার্যকরী গ্রুপ রয়েছে। এই অ্যালডিহাইড গ্রুপ খুব সহজেই জারিত হতে পারে, যার ফলে মিথানোয়িক এসিড একটি শক্তিশালী বিজারক হিসেবে কাজ করে। এটি টলেন্স বিকারক এবং ফেলিং দ্রবণকে বিজারিত করতে পারে।</p>",
+        },
+        {
+          id: 35,
+          question:
+            "2KMnO₄ + 8H₂SO₄ + 10FeSO₄ → K₂SO₄ + 2MnSO₄ + 5Fe₂(SO₄)₃ + 8H₂O উপরের বিক্রিয়ায় কত মোল ইলেকট্রন আদান-প্রদান হয়েছে?",
+          options: {
+            a: "1",
+            b: "3",
+            c: "6",
+            d: "10",
+          },
+          correct: "d",
+          explanation:
+            "<p>এই বিক্রিয়ায় KMnO₄ জারক এবং FeSO₄ বিজারক।<br>KMnO₄ এ Mn এর জারণ সংখ্যা +7, যা MnSO₄ এ +2 তে বিজারিত হয়। অর্থাৎ প্রতিটি Mn পরমাণু 5টি ইলেকট্রন গ্রহণ করে। যেহেতু 2 মোল KMnO₄ আছে, তাই মোট 2 × 5 = 10টি ইলেকট্রন গ্রহণ করে।<br>FeSO₄ এ Fe²⁺ আয়ন Fe₂(SO₄)₃ এ Fe³⁺ এ জারিত হয়। অর্থাৎ প্রতিটি Fe²⁺ আয়ন 1টি ইলেকট্রন ত্যাগ করে। যেহেতু 10 মোল FeSO₄ আছে, তাই মোট 10 × 1 = 10টি ইলেকট্রন ত্যাগ করে।<br>সুতরাং, মোট 10 মোল ইলেকট্রন আদান-প্রদান হয়েছে।</p>",
+        },
+        {
+          id: 36,
+          question:
+            "KMnO₄ + H₂SO₄ + FeC₂O₄ → উৎপাদ; এ বিক্রিয়ায় সমতাযুক্ত সমীকরণে জারক ও বিজারকের মোল অনুপাত কত?",
+          options: {
+            a: "2:5",
+            b: "2:6",
+            c: "3:5",
+            d: "3:6",
+          },
+          correct: "a",
+          explanation:
+            "<p>এই বিক্রিয়ায় KMnO₄ জারক এবং FeC₂O₄ (ফেরাস অক্সালেট) বিজারক।<br>KMnO₄ এ Mn এর জারণ সংখ্যা +7 থেকে MnSO₄ এ +2 তে বিজারিত হয় (5টি ইলেকট্রন গ্রহণ)।<br>FeC₂O₄ এ Fe²⁺ Fe³⁺ এ জারিত হয় (1টি ইলেকট্রন ত্যাগ) এবং C₂O₄²⁻ CO₂ তে জারিত হয় (2টি কার্বনের জন্য 2টি ইলেকট্রন ত্যাগ)। অর্থাৎ, FeC₂O₄ থেকে মোট 1+2=3টি ইলেকট্রন ত্যাগ হয়।<br>ইলেকট্রন আদান-প্রদান সমান করতে, KMnO₄ কে 3 দ্বারা এবং FeC₂O₄ কে 5 দ্বারা গুণ করতে হবে (মোট 15টি ইলেকট্রন)।<br>3KMnO₄ + 5FeC₂O₄ + H₂SO₄ → উৎপাদ<br>সুতরাং, জারক (KMnO₄) ও বিজারক (FeC₂O₄) এর মোল অনুপাত 2:5।</p>",
+        },
+        {
+          id: 37,
+          question:
+            "2KMnO₄ + 8H₂SO₄ + 10FeSO₄ → K₂SO₄ + 2MnSO₄ + 5Fe₂(SO₄)₃ + 8H₂O উপরের বিক্রিয়াটিতে H₂SO₄ এর ভূমিকা কোনটি?",
+          options: {
+            a: "জারক",
+            b: "বিজারক",
+            c: "অম্লীয় মাধ্যম",
+            d: "নিরুদক",
+          },
+          correct: "c",
+          explanation:
+            "<p>এই বিক্রিয়াটি একটি রেডক্স বিক্রিয়া যেখানে KMnO₄ জারক এবং FeSO₄ বিজারক হিসেবে কাজ করে। H₂SO₄ (সালফিউরিক অ্যাসিড) বিক্রিয়ার অম্লীয় পরিবেশ বজায় রাখতে সাহায্য করে। অম্লীয় মাধ্যমে KMnO₄ এর বিজারণ ঘটে এবং MnO₄⁻ আয়ন Mn²⁺ আয়নে রূপান্তরিত হয়। এখানে H₂SO₄ শুধুমাত্র H⁺ আয়ন সরবরাহ করে বিক্রিয়ার মাধ্যম হিসেবে কাজ করে, এর জারণ সংখ্যার কোনো পরিবর্তন হয় না, তাই এটি জারক বা বিজারক নয়।</p>",
+        },
+        {
+          id: 38,
+          question: "নিচের কোনটি জারণ-বিজারণ বিক্রিয়া নয়?",
+          options: {
+            a: "2Na + Cl₂ → 2NaCl",
+            b: "SnCl₂ + FeCl₃ → SnCl₄ + FeCl₂",
+            c: "Cu + HNO₃ → Cu(NO₃)₂ + NO + H₂O",
+            d: "NaCl + AgNO₃ → AgCl + NaNO₃",
+          },
+          correct: "d",
+          explanation:
+            "<p>জারণ-বিজারণ বিক্রিয়া হলো যেখানে বিক্রিয়কগুলির জারণ সংখ্যার পরিবর্তন হয়।<br>অপশন (D) NaCl + AgNO₃ → AgCl + NaNO₃ বিক্রিয়াটি একটি বিনিময় বিক্রিয়া। এখানে Na এর জারণ সংখ্যা +1, Cl এর -1, Ag এর +1, এবং NO₃⁻ এর -1 জারণ সংখ্যা বিক্রিয়ার আগে ও পরে অপরিবর্তিত থাকে। অর্থাৎ, কোনো মৌলের জারণ সংখ্যার পরিবর্তন হয় না। তাই এটি জারণ-বিজারণ বিক্রিয়া নয়।</p>",
+        },
+        {
+          id: 39,
+          question: "H₂S → S + 2H⁺ এর জারণ সংখ্যার কী পরিবর্তন ঘটে?",
+          options: {
+            a: "–2 → 0",
+            b: "+2 → 0",
+            c: "0 → –2",
+            d: "+3 → 0",
+          },
+          correct: "a",
+          explanation:
+            "<p>H₂S এ সালফারের জারণ সংখ্যা নির্ণয় করি:<br>2(+1) + S(x) = 0 &rArr; 2 + x = 0 &rArr; x = -2।<br>বিক্রিয়ার উৎপাদে S (মৌলিক সালফার) এর জারণ সংখ্যা 0।<br>সুতরাং, সালফারের জারণ সংখ্যার পরিবর্তন -2 থেকে 0। এটি জারণ বিক্রিয়া।</p>",
+        },
+        {
+          id: 40,
+          question:
+            "2KMnO₄ + 8H₂SO₄ + 10FeSO₄ → K₂SO₄ + 2MnSO₄ + 5Fe₂(SO₄)₃ + 8H₂O উপরের বিক্রিয়ায় Mn এর জারণ সংখ্যা কত হ্রাস পায়?",
+          options: {
+            a: "+5",
+            b: "+2",
+            c: "+1",
+            d: "–1",
+          },
+          correct: "a",
+          explanation:
+            "<p>KMnO₄ এ Mn এর জারণ সংখ্যা +7 (K(+1) + Mn(x) + 4O(-2) = 0 &rArr; 1 + x - 8 = 0 &rArr; x = +7)।<br>MnSO₄ এ Mn এর জারণ সংখ্যা +2 (Mn(x) + SO₄(-2) = 0 &rArr; x - 2 = 0 &rArr; x = +2)।<br>সুতরাং, Mn এর জারণ সংখ্যা +7 থেকে +2 তে হ্রাস পায়। জারণ সংখ্যার হ্রাস = 7 - 2 = 5।</p>",
+        },
+        {
+          id: 41,
+          question: "কোনটি জারক ও বিজারক উভয়রূপে ক্রিয়া করে?",
+          options: {
+            a: "Cu²⁺",
+            b: "Sn²⁺",
+            c: "Ag⁺",
+            d: "Fe³⁺",
+          },
+          correct: "b",
+          explanation:
+            "<p>একটি মৌল জারক ও বিজারক উভয়রূপে কাজ করতে পারে যদি তার জারণ অবস্থা সর্বনিম্ন এবং সর্বোচ্চ জারণ অবস্থার মধ্যবর্তী হয়।<br>Sn²⁺ (স্ট্যানাস আয়ন) এর ক্ষেত্রে, টিন এর জারণ সংখ্যা +2। টিন +2 থেকে +4 এ জারিত হতে পারে (ইলেকট্রন ত্যাগ করে বিজারক হিসেবে) এবং +2 থেকে 0 (ধাতব টিন) এ বিজারিত হতে পারে (ইলেকট্রন গ্রহণ করে জারক হিসেবে)। তাই Sn²⁺ উভয় রূপে কাজ করে।<br>Cu²⁺ এবং Ag⁺ সাধারণত জারক। Fe³⁺ সাধারণত জারক।</p>",
+        },
+        {
+          id: 42,
+          question:
+            "BaMnF₄ এবং Li₂MgFeF₆ যৌগদ্বয়ে Mn ও Fe এর জারণ সংখ্যার ক্রম কোনটি?",
+          options: {
+            a: "+2, +2",
+            b: "+5, +2",
+            c: "+4, +3",
+            d: "+5, +3",
+          },
+          correct: "a",
+          explanation:
+            "<p>BaMnF₄ যৌগে:<br>Ba এর জারণ সংখ্যা +2। ফ্লোরিনের জারণ সংখ্যা -1।<br>ধরি, Mn এর জারণ সংখ্যা x।<br>+2 + x + 4(-1) = 0<br>2 + x - 4 = 0<br>x - 2 = 0<br>x = +2<br>Li₂MgFeF₆ যৌগে:<br>Li এর জারণ সংখ্যা +1। Mg এর জারণ সংখ্যা +2। ফ্লোরিনের জারণ সংখ্যা -1।<br>ধরি, Fe এর জারণ সংখ্যা y।<br>2(+1) + (+2) + y + 6(-1) = 0<br>2 + 2 + y - 6 = 0<br>4 + y - 6 = 0<br>y - 2 = 0<br>y = +2<br>সুতরাং, Mn ও Fe এর জারণ সংখ্যার ক্রম যথাক্রমে +2, +2।</p>",
+        },
+        {
+          id: 43,
+          question:
+            "2KNO₃ → 2KNO₂ + O₂ এ বিক্রিয়াটিতে জারিত ও বিজারিত মৌল যথাক্রমে কী কী?",
+          options: {
+            a: "N, O",
+            b: "O, N",
+            c: "K, O",
+            d: "N, K",
+          },
+          correct: "b",
+          explanation:
+            "<p>প্রদত্ত বিক্রিয়া: 2KNO₃ → 2KNO₂ + O₂<br>বিক্রিয়কে KNO₃ এ K এর জারণ সংখ্যা +1, O এর -2। N এর জারণ সংখ্যা নির্ণয় করি: +1 + x + 3(-2) = 0 &rArr; 1 + x - 6 = 0 &rArr; x = +5।<br>উৎপাদে KNO₂ এ K এর জারণ সংখ্যা +1, O এর -2। N এর জারণ সংখ্যা নির্ণয় করি: +1 + y + 2(-2) = 0 &rArr; 1 + y - 4 = 0 &rArr; y = +3।<br>উৎপাদে O₂ এ অক্সিজেনের জারণ সংখ্যা 0।<br>এখানে, নাইট্রোজেনের জারণ সংখ্যা +5 থেকে +3 তে হ্রাস পেয়েছে (বিজারণ)।<br>অক্সিজেনের জারণ সংখ্যা -2 থেকে 0 তে বৃদ্ধি পেয়েছে (জারণ)।<br>সুতরাং, জারিত মৌল অক্সিজেন (O) এবং বিজারিত মৌল নাইট্রোজেন (N)।</p>",
+        },
+        {
+          id: 44,
+          question: "কোনটি জারণ-বিজারণ বিক্রিয়া?",
+          options: {
+            a: "HCl(aq) + NaOH(aq) → NaCl(aq) + H₂O(l)",
+            b: "Na₂SO₄(aq) + BaCl₂(aq) → BaSO₄(s) + 2NaCl(aq)",
+            c: "Zn(s) + H₂SO₄(aq) → ZnSO₄(aq) + H₂(g)",
+            d: "AlCl₃(s) + H₂O(l) → Al(OH)₃(s) + 3HCl(aq)",
+          },
+          correct: "c",
+          explanation:
+            "<p>জারণ-বিজারণ বিক্রিয়ায় পরমাণুর জারণ সংখ্যার পরিবর্তন ঘটে।<br>অপশন (C) Zn(s) + H₂SO₄(aq) → ZnSO₄(aq) + H₂(g) বিক্রিয়াটিতে:<br>বিক্রিয়কে Zn এর জারণ সংখ্যা 0। H₂SO₄ এ H এর জারণ সংখ্যা +1।<br>উৎপাদে ZnSO₄ এ Zn এর জারণ সংখ্যা +2। H₂ এ H এর জারণ সংখ্যা 0।<br>এখানে Zn এর জারণ সংখ্যা 0 থেকে +2 তে বৃদ্ধি পেয়েছে (জারিত)। H এর জারণ সংখ্যা +1 থেকে 0 তে হ্রাস পেয়েছে (বিজারিত)। এটি একটি জারণ-বিজারণ বিক্রিয়া।</p>",
+        },
+        {
+          id: 45,
+          question:
+            "নিম্নলিখিত জারণ-বিজারণ বিক্রিয়ার উৎপাদসমূহ কী? K₂Cr₂O₇(aq) + H₂SO₄(aq) + FeSO₄(aq) → উৎপাদসমূহ",
+          options: {
+            a: "K₂SO₄, Fe₂(SO₄)₃, H₂O",
+            b: "K₂SO₄, Cr₂(SO₄)₃, H₂O",
+            c: "Cr₂(SO₄)₃, Fe₂(SO₄)₃, H₂O",
+            d: "K₂SO₄, Cr₂(SO₄)₃, Fe₂(SO₄)₃, H₂O",
+          },
+          correct: "d",
+          explanation:
+            "<p>K₂Cr₂O₇ একটি শক্তিশালী জারক, যা অম্লীয় মাধ্যমে Cr³⁺ আয়নে বিজারিত হয়। এই Cr³⁺ সালফেট (SO₄²⁻) এর সাথে যুক্ত হয়ে Cr₂(SO₄)₃ গঠন করে।<br>FeSO₄ একটি বিজারক, যা K₂Cr₂O₇ দ্বারা জারিত হয়ে Fe³⁺ আয়নে পরিণত হয়। এই Fe³⁺ সালফেট (SO₄²⁻) এর সাথে যুক্ত হয়ে Fe₂(SO₄)₃ গঠন করে।<br>বিক্রিয়ার ফলে K₂SO₄ এবং H₂O ও উৎপন্ন হয়।<br>সুতরাং, উৎপাদসমূহ হলো K₂SO₄, Cr₂(SO₄)₃, Fe₂(SO₄)₃ এবং H₂O।</p>",
+        },
+        {
+          id: 46,
+          question: "N এর সর্বোচ্চ জারণ অবস্থান নিচের কোনটিতে?",
+          options: {
+            a: "N₂O₅",
+            b: "[NH₄]⁺",
+            c: "NO₂",
+            d: "NO₂⁻",
+          },
+          correct: "a",
+          explanation:
+            "<p>বিভিন্ন যৌগে নাইট্রোজেনের জারণ সংখ্যা নির্ণয় করি:<br>N₂O₅: 2N(x) + 5O(-2) = 0 &rArr; 2x - 10 = 0 &rArr; 2x = 10 &rArr; x = +5<br>[NH₄]⁺: N(x) + 4H(+1) = +1 &rArr; x + 4 = +1 &rArr; x = -3<br>NO₂: N(x) + 2O(-2) = 0 &rArr; x - 4 = 0 &rArr; x = +4<br>NO₂⁻: N(x) + 2O(-2) = -1 &rArr; x - 4 = -1 &rArr; x = +3<br>সুতরাং, N₂O₅ এ নাইট্রোজেনের জারণ সংখ্যা সর্বাধিক (+5)।</p>",
+        },
+        {
+          id: 47,
+          question: "[Fe(CN)₆]³⁻ আয়নে Fe এর জারণ সংখ্যা কত?",
+          options: {
+            a: "0",
+            b: "+2",
+            c: "+3",
+            d: "–3",
+          },
+          correct: "c",
+          explanation:
+            "<p>জটিল যৌগ [Fe(CN)₆]³⁻ আয়নে Fe এর জারণ সংখ্যা নির্ণয় করি।<br>সাইয়ানাইড (CN) একটি লিগ্যান্ড যার চার্জ -1।<br>ধরি, Fe এর জারণ সংখ্যা x।<br>x + 6(-1) = -3<br>x - 6 = -3<br>x = +3<br>সুতরাং, [Fe(CN)₆]³⁻ আয়নে Fe এর জারণ সংখ্যা +3।</p>",
+        },
+        {
+          id: 48,
+          question: "নিচের কোন জোড়াটি জারক ও বিজারকের উদাহরণ?",
+          options: {
+            a: "KMnO₄, K₂Cr₂O₇",
+            b: "Na₂C₂O₄, KMnO₄",
+            c: "CuSO₄, K₂Cr₂O₇",
+            d: "KMnO₄, KI",
+          },
+          correct: "d",
+          explanation:
+            "<p>জারক পদার্থ ইলেকট্রন গ্রহণ করে এবং বিজারক পদার্থ ইলেকট্রন ত্যাগ করে।<br>KMnO₄ (পটাশিয়াম পারম্যাঙ্গানেট) একটি শক্তিশালী জারক।<br>KI (পটাশিয়াম আয়োডাইড) এর আয়োডাইড আয়ন (I⁻) খুব সহজে ইলেকট্রন ত্যাগ করে জারিত হতে পারে, তাই এটি একটি শক্তিশালী বিজারক।<br>সুতরাং, KMnO₄ ও KI এর জোড়াটি জারক ও বিজারকের উদাহরণ।</p>",
+        },
+        {
+          id: 49,
+          question:
+            "CuSO₄ + KI → Cu₂I₂ + I₂ + K₂SO₄ এ বিক্রিয়ার ক্ষেত্রে কোনটি সঠিক?",
+          options: {
+            a: "Cu²⁺ আয়ন জারিত হয়েছে",
+            b: "I⁻ আয়ন জারিত হয়েছে",
+            c: "I⁻ আয়ন বিজারিত হয়েছে",
+            d: "Cu²⁺ আয়ন বিজারক",
+          },
+          correct: "b",
+          explanation:
+            "<p>এই বিক্রিয়ায়, CuSO₄ এর Cu²⁺ আয়ন Cu₂I₂ তে Cu⁺ এ বিজারিত হয় (জারণ সংখ্যা +2 থেকে +1)।<br>অন্যদিকে, KI এর I⁻ আয়ন I₂ তে জারিত হয় (জারণ সংখ্যা -1 থেকে 0)।<br>যেহেতু I⁻ আয়ন ইলেকট্রন ত্যাগ করে, এটি জারিত হয়েছে।</p>",
+        },
+        {
+          id: 50,
+          question:
+            "অম্লীয় মাধ্যমে ১/২ মোল KMnO₄ কত মোল ফেরাস সালফেটকে জারিত করতে পারবে?",
+          options: {
+            a: "10",
+            b: "6",
+            c: "5",
+            d: "2.5",
+          },
+          correct: "d",
+          explanation:
+            "<p>অম্লীয় মাধ্যমে KMnO₄ (MnO₄⁻) Mn²⁺ এ বিজারিত হয় এবং 5টি ইলেকট্রন গ্রহণ করে।<br>FeSO₄ (Fe²⁺) Fe³⁺ এ জারিত হয় এবং 1টি ইলেকট্রন ত্যাগ করে।<br>বিক্রিয়ার সমতাযুক্ত সমীকরণ থেকে, 1 মোল KMnO₄ 5 মোল FeSO₄ কে জারিত করে।<br>সুতরাং, 1/2 মোল KMnO₄ = (1/2) × 5 = 2.5 মোল ফেরাস সালফেটকে জারিত করতে পারবে।</p>",
+        },
+        {
+          id: 51,
+          question:
+            "Na₂S₂O₃ + I₂ → Na₂S₄O₆ + NaI এই বিক্রিয়ায় কোনটি বিজারিত হয়?",
+          options: {
+            a: "Na⁺",
+            b: "S₂O₃²⁻",
+            c: "I₂",
+            d: "NaI",
+          },
+          correct: "c",
+          explanation:
+            "<p>এই বিক্রিয়ায়, I₂ (আয়োডিন) Na₂S₂O₃ (সোডিয়াম থায়োসালফেট) দ্বারা বিজারিত হয়।<br>I₂ এর জারণ সংখ্যা 0। এটি NaI এ I⁻ (জারণ সংখ্যা -1) এ বিজারিত হয়।<br>অন্যদিকে, Na₂S₂O₃ এর S এর জারণ সংখ্যা +2 থেকে Na₂S₄O₆ এ +2.5 এ জারিত হয়।<br>সুতরাং, I₂ বিজারিত হয়।</p>",
+        },
+        {
+          id: 52,
+          question: "কোনটি জারক পদার্থ?",
+          options: {
+            a: "Cl⁻",
+            b: "Fe",
+            c: "Na",
+            d: "Mg²⁺",
+          },
+          correct: "d",
+          explanation:
+            "<p>জারক পদার্থ ইলেকট্রন গ্রহণ করে নিজে বিজারিত হয়। Mg²⁺ (ম্যাগনেসিয়াম আয়ন) এর সর্ববহিঃস্থ শক্তিস্তরে 8টি ইলেকট্রন আছে, যা এটিকে স্থিতিশীল করে তোলে। তবে এটি ইলেকট্রন গ্রহণ করার সামান্য প্রবণতা রাখে, যদিও এটি খুব শক্তিশালী জারক নয়।<br>Cl⁻ (ক্লোরাইড আয়ন) একটি বিজারক, Fe (আয়রন) এবং Na (সোডিয়াম) উভয়ই বিজারক পদার্থ কারণ তারা ইলেকট্রন ত্যাগ করে জারিত হয়।</p>",
+        },
+        {
+          id: 53,
+          question: "কোন বিক্রিয়াটি জারণ-বিজারণ নয়?",
+          options: {
+            a: "2H₂O₂ → 2H₂O + O₂",
+            b: "CO₂ + C → 2CO",
+            c: "CaCO₃ → CaO + CO₂",
+            d: "Fe₂O₃ + 3CO → 2Fe + 3CO₂",
+          },
+          correct: "c",
+          explanation:
+            "<p>জারণ-বিজারণ বিক্রিয়ায় পরমাণুর জারণ সংখ্যার পরিবর্তন ঘটে।<br>অপশন (C) CaCO₃ → CaO + CO₂ বিক্রিয়াটি একটি তাপীয় বিয়োজন বিক্রিয়া। এখানে ক্যালসিয়াম কার্বনেটের উপাদানগুলোর জারণ সংখ্যার কোনো পরিবর্তন হয় না। Ca এর +2, O এর -2, এবং C এর +4 জারণ সংখ্যা বিক্রিয়ার আগে ও পরে অপরিবর্তিত থাকে। তাই এটি জারণ-বিজারণ বিক্রিয়া নয়।</p>",
+        },
+        {
+          id: 54,
+          question: "CrO₅ এর গাঠনিক সংকেতে Cr এর জারণ সংখ্যা কত?",
+          options: {
+            a: "4",
+            b: "5",
+            c: "6",
+            d: "10",
+          },
+          correct: "c",
+          explanation:
+            "<p>CrO₅ এর গাঠনিক সংকেত একটি বাটারফ্লাই কাঠামোর মতো। এতে 4টি অক্সিজেন পরমাণু পারক্সাইড বন্ধন (-O-O-) দ্বারা যুক্ত এবং একটি অক্সিজেন পরমাণু দ্বিবন্ধন দ্বারা যুক্ত।<br>সাধারণত, পারক্সাইড বন্ধনের অক্সিজেনের জারণ সংখ্যা -1।<br>একটি দ্বিবন্ধন যুক্ত অক্সিজেনের জারণ সংখ্যা -2।<br>ধরি, Cr এর জারণ সংখ্যা x।<br>x + 4(-1) + 1(-2) = 0<br>x - 4 - 2 = 0<br>x - 6 = 0<br>x = +6<br>সুতরাং, CrO₅ এ Cr এর জারণ সংখ্যা +6।</p>",
+        },
+        {
+          id: 55,
+          question:
+            "Br₂ + OH⁻ → BrO₃⁻ এ বিক্রিয়ায় Br এর জারণ সংখ্যার কী পরিবর্তন ঘটে?",
+          options: {
+            a: "0 থেকে +5",
+            b: "0 থেকে +3",
+            c: "+1 থেকে +5",
+            d: "–1 থেকে +5",
+          },
+          correct: "a",
+          explanation:
+            "<p>বিক্রিয়ার শুরুতে Br₂ (ব্রোমিন) এর জারণ সংখ্যা 0।<br>উৎপাদে BrO₃⁻ আয়নে ব্রোমিনের জারণ সংখ্যা নির্ণয় করি:<br>ধরি, Br এর জারণ সংখ্যা x। অক্সিজেনের জারণ সংখ্যা -2।<br>x + 3(-2) = -1<br>x - 6 = -1<br>x = +5<br>সুতরাং, এই বিক্রিয়ায় ব্রোমিনের জারণ সংখ্যার পরিবর্তন 0 থেকে +5। এটি একটি অসমঞ্জস জারণ-বিজারণ বিক্রিয়া, যেখানে ব্রোমিন একই সাথে জারিত (BrO₃⁻) এবং বিজারিত (Br⁻) হয়।</p>",
+        },
+        {
+          id: 56,
+          question:
+            "সোডিয়াম টেট্রাথায়োনেটে কেন্দ্রীয় পরমাণুর জারণ সংখ্যা কত?",
+          options: {
+            a: "+2.0",
+            b: "+2.5",
+            c: "+3.5",
+            d: "+4.0",
+          },
+          correct: "b",
+          explanation:
+            "<p>সোডিয়াম টেট্রাথায়োনেট এর সংকেত Na₂S₄O₆।<br>এখানে সোডিয়ামের জারণ সংখ্যা +1 এবং অক্সিজেনের জারণ সংখ্যা -2।<br>ধরি, সালফারের গড় জারণ সংখ্যা x।<br>2(+1) + 4(x) + 6(-2) = 0<br>2 + 4x - 12 = 0<br>4x - 10 = 0<br>4x = 10<br>x = 10/4 = +2.5<br>সুতরাং, সোডিয়াম টেট্রাথায়োনেটে সালফারের গড় জারণ সংখ্যা +2.5।</p>",
+        },
+        {
+          id: 57,
+          question: "পারক্লোরিক এসিডের কেন্দ্রীয় পরমাণুর জারণ সংখ্যা কত?",
+          options: {
+            a: "+1",
+            b: "+3",
+            c: "+5",
+            d: "+7",
+          },
+          correct: "d",
+          explanation:
+            "<p>পারক্লোরিক এসিডের সংকেত HClO₄। এখানে কেন্দ্রীয় পরমাণু হলো ক্লোরিন (Cl)।<br>হাইড্রোজেনের জারণ সংখ্যা +1 এবং অক্সিজেনের জারণ সংখ্যা -2।<br>ধরি, Cl এর জারণ সংখ্যা x।<br>+1 + x + 4(-2) = 0<br>1 + x - 8 = 0<br>x - 7 = 0<br>x = +7<br>সুতরাং, পারক্লোরিক এসিডে ক্লোরিনের জারণ সংখ্যা +7।</p>",
+        },
+        {
+          id: 58,
+          question:
+            "কোন যৌগের অণুতে নাইট্রোজেন সর্বোচ্চ জারণ অবস্থা প্রদর্শন করেছে?",
+          options: {
+            a: "NH₂OH",
+            b: "N₂H₄",
+            c: "NH₃",
+            d: "N₃H",
+          },
+          correct: "d",
+          explanation:
+            "<p>বিভিন্ন যৌগে নাইট্রোজেনের জারণ সংখ্যা নির্ণয় করি:<br>NH₂OH (হাইড্রক্সিলামিন): H(+1), O(-2)<br>N(x) + 2(+1) + (-2) + (+1) = 0 &rArr; x + 1 = 0 &rArr; x = -1<br>N₂H₄ (হাইড্রাজিন): H(+1)<br>2N(x) + 4(+1) = 0 &rArr; 2x + 4 = 0 &rArr; 2x = -4 &rArr; x = -2<br>NH₃ (অ্যামোনিয়া): H(+1)<br>N(x) + 3(+1) = 0 &rArr; x + 3 = 0 &rArr; x = -3<br>N₃H (হাইড্রাজোইক অ্যাসিড): H(+1)<br>3N(x) + (+1) = 0 &rArr; 3x = -1 &rArr; x = -1/3<br>যদিও কোনো অপশনে নাইট্রোজেনের সর্বোচ্চ জারণ অবস্থা (+5) নেই, প্রদত্ত অপশনগুলোর মধ্যে হাইড্রাজোইক অ্যাসিড (N₃H) এ নাইট্রোজেনের গড় জারণ অবস্থা (-1/3) অন্যগুলোর (সবগুলো ঋণাত্মক) চেয়ে বেশি। তবে সাধারণত 'সর্বোচ্চ জারণ অবস্থা' বলতে +5 কে বোঝায়। প্রদত্ত বিকল্পগুলি থেকে সঠিক উত্তর খুঁজে পাওয়া কঠিন।</p>",
+        },
+        {
+          id: 59,
+          question: "প্রশম মাধ্যমে KMnO₄ কোনটিতে পরিণত হয়?",
+          options: {
+            a: "MnSO₄",
+            b: "MnO",
+            c: "MnS",
+            d: "MnO₂",
+          },
+          correct: "d",
+          explanation:
+            "<p>প্রশম বা প্রায় ক্ষারীয় মাধ্যমে KMnO₄ (পটাশিয়াম পারম্যাঙ্গানেট) বিজারিত হয়ে ম্যাঙ্গানিজ ডাই অক্সাইড (MnO₂) এ পরিণত হয়। এই বিক্রিয়ায় ম্যাঙ্গানিজের জারণ সংখ্যা +7 থেকে +4 এ হ্রাস পায়।<br>KMnO₄ + H₂O → MnO₂ + KOH + O₂ (অসমতাকৃত)<br>KMnO₄ এর গাঢ় বেগুনী রঙ MnO₂ এর বাদামী অধঃক্ষেপ এ পরিবর্তিত হয়।</p>",
+        },
+        {
+          id: 60,
+          question: "CH₂Cl₂ যৌগে C পরমাণুর জারণ সংখ্যা কত?",
+          options: {
+            a: "+4",
+            b: "+2",
+            c: "–2",
+            d: "0",
+          },
+          correct: "d",
+          explanation:
+            "<p>CH₂Cl₂ (ডাইক্লোরোমিথেন) যৌগে কার্বন (C) পরমাণুর জারণ সংখ্যা নির্ণয় করি।<br>হাইড্রোজেনের জারণ সংখ্যা +1। ক্লোরিনের জারণ সংখ্যা -1।<br>ধরি, কার্বনের জারণ সংখ্যা x।<br>x + 2(+1) + 2(-1) = 0<br>x + 2 - 2 = 0<br>x = 0<br>সুতরাং, CH₂Cl₂ যৌগে কার্বন পরমাণুর জারণ সংখ্যা 0।</p>",
+        },
+        {
+          id: 61,
+          question:
+            "কোন যৌগের মধ্যে অক্সিজেন পরমাণু ধনাত্মক জারণ অবস্থা প্রদর্শন করেছে?",
+          options: {
+            a: "H₂O₂",
+            b: "KO₂",
+            c: "Na₂O₂",
+            d: "OF₂",
+          },
+          correct: "d",
+          explanation:
+            "<p>সাধারণত অক্সিজেন ঋণাত্মক জারণ সংখ্যা প্রদর্শন করে (-2, পারক্সাইডে -1, সুপারক্সাইডে -1/2)। তবে, ফ্লুরিন অক্সিজেনের চেয়ে বেশি তড়িৎ ঋণাত্মক মৌল হওয়ায়, যখন অক্সিজেন ফ্লুরিনের সাথে যুক্ত হয়, তখন অক্সিজেন ধনাত্মক জারণ সংখ্যা প্রদর্শন করে।<br>OF₂ (অক্সিজেন ডাইফ্লুরাইড) যৌগে ফ্লুরিনের জারণ সংখ্যা -1 (কারণ এটি সবচেয়ে তড়িৎ ঋণাত্মক মৌল)।<br>ধরি, অক্সিজেনের জারণ সংখ্যা x।<br>x + 2(-1) = 0<br>x - 2 = 0<br>x = +2<br>সুতরাং, OF₂ যৌগে অক্সিজেন পরমাণু ধনাত্মক জারণ অবস্থা (+2) প্রদর্শন করেছে।</p>",
+        },
+        {
+          id: 62,
+          question: "নিচের কোনটিতে মৌলের জারণ সংখ্যা +6 প্রদর্শিত হয়েছে?",
+          options: {
+            a: "MnO₄⁻",
+            b: "[Cr(CN)₆]³⁻",
+            c: "[Co(NH₃)₆]³⁺",
+            d: "CrO₂Cl₂",
+          },
+          correct: "d",
+          explanation:
+            "<p>বিভিন্ন যৌগে কেন্দ্রীয় মৌলের জারণ সংখ্যা নির্ণয় করি:<br>MnO₄⁻: Mn(x) + 4O(-2) = -1 &rArr; x - 8 = -1 &rArr; x = +7<br>[Cr(CN)₆]³⁻: Cr(x) + 6CN(-1) = -3 &rArr; x - 6 = -3 &rArr; x = +3<br>[Co(NH₃)₆]³⁺: NH₃ (অ্যামোনিয়া) একটি নিরপেক্ষ লিগ্যান্ড, যার জারণ সংখ্যা 0।<br>Co(x) + 6NH₃(0) = +3 &rArr; x = +3<br>CrO₂Cl₂: Cr(x) + 2O(-2) + 2Cl(-1) = 0 &rArr; x - 4 - 2 = 0 &rArr; x - 6 = 0 &rArr; x = +6<br>সুতরাং, CrO₂Cl₂ তে ক্রোমিয়ামের জারণ সংখ্যা +6।</p>",
+        },
+        {
+          id: 63,
+          question:
+            "Na₂S₄O₆ অণুতে দু’ধরনের সালফার পরমাণুর মধ্যে জারণ মানের পার্থক্য কোনটি?",
+          options: {
+            a: "2",
+            b: "4",
+            c: "5",
+            d: "6",
+          },
+          correct: "c",
+          explanation:
+            "<p>Na₂S₄O₆ (সোডিয়াম টেট্রাথায়োনেট) এর গাঠনিক সংকেত হল Na-O-S(=O)₂-S-S-S(=O)₂-O-Na।<br>এই অণুতে দুটি প্রান্তে থাকা সালফার পরমাণু (O=S=O) এবং দুটি কেন্দ্রে থাকা সালফার পরমাণু (-S-S-) এর জারণ মান ভিন্ন।<br>প্রান্তের সালফার পরমাণু দুটির জারণ সংখ্যা +5 (কারণ তারা দুটি অক্সিজেন পরমাণু এবং একটি অপর সালফার পরমাণুর সাথে যুক্ত)।<br>কেন্দ্রের সালফার পরমাণু দুটির জারণ সংখ্যা 0 (কারণ তারা শুধুমাত্র সালফার পরমাণুর সাথে যুক্ত)।<br>সুতরাং, দু’ধরনের সালফার পরমাণুর জারণ মানের পার্থক্য = +5 - 0 = 5।</p>",
+        },
+        {
+          id: 64,
+          question:
+            "যৌগের আধানবিহীন অণুতে উপস্থিত পরমাণুর জারণ সংখ্যার যোগফল কত?",
+          options: {
+            a: "0",
+            b: "1",
+            c: "–1",
+            d: "আয়নের চার্জের সমান",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি আধানবিহীন বা নিরপেক্ষ অণুতে (যেমন H₂O, CO₂, NaCl ইত্যাদি) উপস্থিত সকল পরমাণুর জারণ সংখ্যার বীজগাণিতিক যোগফল সর্বদা শূন্য হয়। কারণ অণু সামগ্রিকভাবে কোনো চার্জ বহন করে না। যদি এটি একটি আয়ন হতো, তাহলে পরমাণুগুলোর জারণ সংখ্যার যোগফল আয়নের চার্জের সমান হতো।</p>",
+        },
+        {
+          id: 65,
+          question: "কোনটি জারণ-বিজারণ বিক্রিয়া নয়?",
+          options: {
+            a: "2Cu(NO₃)₂ → 2CuO + 4NO₂ + O₂",
+            b: "2Na + Cl₂ → 2NaCl",
+            c: "Na₂SO₃ + 2HCl → 2NaCl + SO₂ + H₂O",
+            d: "Mg + H₂SO₄ → MgSO₄ + H₂",
+          },
+          correct: "c",
+          explanation:
+            "<p>জারণ-বিজারণ বিক্রিয়ায় পরমাণুর জারণ সংখ্যার পরিবর্তন ঘটে।<br>অপশন (C) Na₂SO₃ + 2HCl → 2NaCl + SO₂ + H₂O বিক্রিয়াটিতে: Na এর +1, S এর +4, O এর -2, H এর +1 এবং Cl এর -1 জারণ সংখ্যা বিক্রিয়ার আগে ও পরে অপরিবর্তিত থাকে। এটি একটি দ্বৈত প্রতিস্থাপন বা অ্যাসিড-ক্ষার বিক্রিয়া। তাই এটি জারণ-বিজারণ বিক্রিয়া নয়।</p>",
+        },
+        {
+          id: 66,
+          question: "2KClO₃ → 2KCl + 3O₂ বিক্রিয়ায় অক্সিজেন-",
+          options: {
+            a: "জারিত হয়",
+            b: "জারক",
+            c: "বিজারিত হয়",
+            d: "নিরপেক্ষ",
+          },
+          correct: "a",
+          explanation:
+            "<p>বিক্রিয়কে KClO₃ (পটাশিয়াম ক্লোরেট) এ অক্সিজেনের জারণ সংখ্যা -2।<br>উৎপাদে O₂ (মৌলিক অক্সিজেন) এর জারণ সংখ্যা 0।<br>এখানে অক্সিজেনের জারণ সংখ্যা -2 থেকে 0 তে বৃদ্ধি পেয়েছে। জারণ সংখ্যা বৃদ্ধি পাওয়াকে জারণ বলে। সুতরাং, অক্সিজেন জারিত হয়।</p>",
+        },
+        {
+          id: 67,
+          question: "Sn কোন জারণ অবস্থায় বিজারক হিসাবে কাজ করে?",
+          options: {
+            a: "+4",
+            b: "–4",
+            c: "+2",
+            d: "–2",
+          },
+          correct: "c",
+          explanation:
+            "<p>একটি বিজারক পদার্থ ইলেকট্রন ত্যাগ করে নিজে জারিত হয়। টিন (Sn) এর স্থিতিশীল জারণ অবস্থাগুলো হলো +2 এবং +4।<br>যখন টিন +2 জারণ অবস্থায় থাকে (যেমন SnCl₂), তখন এটি ইলেকট্রন ত্যাগ করে +4 জারণ অবস্থায় (যেমন SnCl₄) জারিত হতে পারে। তাই Sn²⁺ বিজারক হিসাবে কাজ করে।<br>+4 জারণ অবস্থায় টিন সর্বোচ্চ জারণ অবস্থায় থাকে এবং ইলেকট্রন ত্যাগ করতে পারে না, তাই এটি জারক হিসেবে কাজ করতে পারে।</p>",
+        },
+        {
+          id: 68,
+          question: "পটাশ এলামে সালফারের জারণ সংখ্যা কত?",
+          options: {
+            a: "–2",
+            b: "+2",
+            c: "+6",
+            d: "+8",
+          },
+          correct: "c",
+          explanation:
+            "<p>পটাশ এলামের সংকেত হলো KAl(SO₄)₂·12H₂O। এটি একটি ডাবল সালফেট লবণ।<br>এই যৌগে সালফার সালফেট আয়ন (SO₄²⁻) হিসেবে বিদ্যমান।<br>SO₄²⁻ আয়নে সালফারের জারণ সংখ্যা নির্ণয় করি:<br>ধরি, সালফারের জারণ সংখ্যা x। অক্সিজেনের জারণ সংখ্যা -2।<br>x + 4(-2) = -2<br>x - 8 = -2<br>x = +6<br>সুতরাং, পটাশ এলামে সালফারের জারণ সংখ্যা +6।</p>",
+        },
+        {
+          id: 69,
+          question: "[Fe(NO)(H₂O)₅]SO₄ এর মধ্যে আয়রনের জারণ মান কত?",
+          options: {
+            a: "+1",
+            b: "+2",
+            c: "+3",
+            d: "0",
+          },
+          correct: "a",
+          explanation:
+            "<p>[Fe(NO)(H₂O)₅]SO₄ এই জটিল যৌগটি ব্রাউন রিং টেস্টে উৎপন্ন হয়।<br>সালফেট (SO₄) এর চার্জ -2।<br>H₂O একটি নিরপেক্ষ লিগ্যান্ড, এর জারণ সংখ্যা 0।<br>NO (নাইট্রোসিল) একটি বিশেষ লিগ্যান্ড। এই জটিল যৌগে এটি NO⁺ হিসেবে আচরণ করে, যার জারণ সংখ্যা +1।<br>ধরি, Fe এর জারণ সংখ্যা x।<br>x + (+1) + 5(0) - 2 = 0<br>x + 1 - 2 = 0<br>x - 1 = 0<br>x = +1<br>সুতরাং, এই যৌগে আয়রনের জারণ মান +1।</p>",
+        },
+        {
+          id: 70,
+          question:
+            "কাগজের উপর ১ ফোটা ঘন H₂SO₄ ফেললে কয়েক সেকেন্ডের মধ্যে একটা কালো বলয়সহ ছিদ্র হয়ে যায়। এর জন্য H₂SO₄ এর কোন ধর্ম দায়ী?",
+          options: {
+            a: "নিরুদক ধর্ম",
+            b: "জারণ ধর্ম",
+            c: "ক্ষয়কারক ধর্ম",
+            d: "নিরুদক ও জারণ ধর্ম",
+          },
+          correct: "d",
+          explanation:
+            "<p>ঘন সালফিউরিক অ্যাসিড (H₂SO₄) এর দুটি প্রধান ধর্ম এখানে কাজ করে:<br>১. <strong>নিরুদক ধর্ম:</strong> কাগজ মূলত সেলুলোজ (একটি কার্বোহাইড্রেট) দিয়ে তৈরি। ঘন H₂SO₄ সেলুলোজ থেকে হাইড্রোজেন ও অক্সিজেনকে পানি হিসেবে অপসারণ করে, যার ফলে কার্বনের কালো অবশেষ পড়ে। এটি কাগজের কালো বলয় তৈরির কারণ।<br>২. <strong>জারণ ধর্ম:</strong> একই সাথে, H₂SO₄ একটি শক্তিশালী জারক। এটি সেলুলোজকে জারিত করে এবং নিজেও বিজারিত হয়। এই জারণ প্রক্রিয়া কাগজের ছিদ্র হওয়ার কারণ।<br>সুতরাং, নিরুদক ও জারণ ধর্ম উভয়ই এর জন্য দায়ী।</p>",
+        },
+        {
+          id: 71,
+          question: "এসিডীয় দ্রবণে KMnO₄ দ্বারা নিচের কোনটি জারিত হয়?",
+          options: {
+            a: "PbO₂",
+            b: "H₂O₂",
+            c: "FeCl₃",
+            d: "H₂S",
+          },
+          correct: "d",
+          explanation:
+            "<p>এসিডীয় দ্রবণে KMnO₄ (পটাশিয়াম পারম্যাঙ্গানেট) একটি শক্তিশালী জারক। এটি এমন পদার্থকে জারিত করবে যার জারণ সংখ্যা আরও বাড়তে পারে।<br>H₂S (হাইড্রোজেন সালফাইড) এ সালফারের জারণ সংখ্যা -2, যা তার সর্বনিম্ন জারণ অবস্থা। এটি সহজেই ইলেকট্রন ত্যাগ করে জারিত হতে পারে (যেমন S অথবা SO₂)।<br>অন্যদিকে, PbO₂ এবং FeCl₃ তে কেন্দ্রীয় পরমাণু (Pb এবং Fe) সর্বোচ্চ বা প্রায় সর্বোচ্চ জারণ অবস্থায় রয়েছে, তাই তারা সাধারণত জারিত না হয়ে বিজারিত হয়। H₂O₂ জারক এবং বিজারক উভয় রূপে কাজ করতে পারে, তবে H₂S এর সালফারের জারণ প্রবণতা বেশি।</p>",
+        },
+        {
+          id: 72,
+          question:
+            "K₂Cr₂O₇ + KI + HCl বিক্রিয়ায় প্রতিটি Cr⁺⁶ আয়ন কয়টি ইলেকট্রন গ্রহণ করে?",
+          options: {
+            a: "1",
+            b: "2",
+            c: "3",
+            d: "4",
+          },
+          correct: "c",
+          explanation:
+            "<p>এই বিক্রিয়ায় K₂Cr₂O₇ (ডাইক্রোমেট আয়ন, Cr₂O₇²⁻) জারক হিসেবে কাজ করে এবং অম্লীয় মাধ্যমে (HCl দ্বারা) Cr⁺⁶ থেকে Cr⁺³ আয়নে বিজারিত হয়।<br>প্রতিটি ক্রোমিয়াম পরমাণুর জারণ সংখ্যা +6 থেকে +3 তে হ্রাস পায়।<br>সুতরাং, প্রতিটি Cr⁺⁶ আয়ন 6 - 3 = 3টি ইলেকট্রন গ্রহণ করে।<br>বিক্রিয়াটি হলো: Cr₂O₇²⁻ + 14H⁺ + 6e⁻ → 2Cr³⁺ + 7H₂O (এখানে দুটি Cr পরমাণু মোট 6টি ইলেকট্রন গ্রহণ করে, অর্থাৎ প্রতিটি Cr 3টি ইলেকট্রন গ্রহণ করে)।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                <label class="option" data-option="${option}">
+                                                                  <div class="circle">${option}</div>
+                                                                  <span class="option-text">${question.options[option]}</span>
+                                                                </label>
+                                                              `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                   <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                   <div class="explanation-content">
+                                                                     <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                     ${question.explanation}
+                                                                   </div>
+                                                                 </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                              <p class="question-label">${
+                                                                index + 1
+                                                              }. ${
+            question.question
+          }</p>
+                                                              <div class="options">
+                                                                ${optionsHTML}
+                                                              </div>
+                                                              ${explanationHTML}
+                                                            `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
